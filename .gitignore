@@ -1,0 +1,17 @@
+*.class
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+# Package Files #
+*.jar
+*.war
+*.ear
+# crash logs, java leecher, etc.
+hs_err_pid*
+# Build directories
+target/
+bin/
+build/
+.gradle/
+.settings/
+.classpath
+.project
