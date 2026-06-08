@@ -1,6 +1,6 @@
 package entity;
 
-public enum EEntityState 
+public enum EEntityDirection 
 {
 	Idle,
 	Up,

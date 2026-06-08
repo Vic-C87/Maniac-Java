@@ -8,38 +8,43 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 import entity.Player;
+import utilities.Debug;
 import utilities.Vec2Int;
 
 public class GameManager extends JPanel implements Runnable 
 {
 	private static final long serialVersionUID = -3171413117350253492L;
-	final int myOriginalTileSize = 16;
-	final int myScale = 3;
 	
-	public final int myTileSize = myOriginalTileSize * myScale;
-	public final int myMaxScreenCol = 16;
-	public final int myMaxScreenRow = 12;
-	public final int myScreenWidth = myTileSize * myMaxScreenCol;
-	public final int myScreenHeight = myTileSize * myMaxScreenRow;
-	public final int myFPS = 60;
-	public final Vec2Int myScreenCenter;
+	final int myTileSize;
+	final int myMaxScreenCol = 16;
+	final int myMaxScreenRow = 9;
+	final int myScreenWidth;
+	final int myScreenHeight;
+	final int myFPS = 60;
+	final Vec2Int myScreenCenter;
 	
-	InputManager myInputManager = new InputManager();
+	InputManager myInputManager;
 	Thread myGameThread;
 
 	AssetManager myAssetManager;
-	public Player myPlayer;
+	Player myPlayer;
 	
-	public GameManager() 
+	public GameManager(int aWidth, int aHeight) 
 	{
+		myScreenWidth = aWidth;
+		myScreenHeight = aHeight;
+		myTileSize = aWidth / myMaxScreenCol;
+		Debug.msg(aWidth + " X " + aHeight);
+		myInputManager = new InputManager(this);
 		this.setPreferredSize(new Dimension(myScreenWidth, myScreenHeight));
 		this.setBackground(Color.black);
 		this.setDoubleBuffered(true);
 		this.addKeyListener(myInputManager);
+		this.addMouseListener(myInputManager);
 		this.setFocusable(true);
 		myScreenCenter = new Vec2Int(myScreenWidth/2 - myTileSize/2, myScreenHeight/2 - myTileSize/2);
-		myAssetManager = new AssetManager(this);
-		myPlayer = new Player(this, myInputManager, myAssetManager);
+		myAssetManager = new AssetManager(this, myTileSize);
+		myPlayer = new Player(myInputManager, myAssetManager, myScreenCenter, myTileSize);
 	}
 	
 	public void startGameThread() 
@@ -93,6 +98,11 @@ public class GameManager extends JPanel implements Runnable
 		//Draw UI
 		
 		g2.dispose();	
+	}
+	
+	public Vec2Int getPlayerPosition()
+	{
+		return myPlayer.getPosition();
 	}
 
 }

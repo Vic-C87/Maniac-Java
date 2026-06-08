@@ -3,78 +3,67 @@ package main;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import item.EItem;
-import item.Item;
-import tile.ETile;
+import entity.EEntityDirection;
+import interactable.CollisionResults;
+import interactable.IInteractable;
 import tile.Map;
 import tile.Tile;
 import utilities.Vec2Int;
+
 
 public class AssetManager 
 {
 	GameManager myGameManager;
 	Map myMap;
-	BufferedImage[] myLoadedTiles;
-	BufferedImage[] myLoadedItems;
+	ArrayList<Tile> myLoadedTiles;
 	int myTileSize;
 	Vec2Int myScreenCenter;
 	Vec2Int myScreenHalfSize;
-	Item[] myItems;
 	
-	public AssetManager(GameManager aGameManager)
+	public AssetManager(GameManager aGameManager, int aTileSize)
 	{
 		myGameManager = aGameManager;
 		
-		myLoadedTiles = new BufferedImage[10];
-		myLoadedItems = new BufferedImage[10];
+		myLoadedTiles = new ArrayList<Tile>();
 		myMap = new Map();
-		myItems = new Item[10];
-		loadTileImages();
-		loadMap("/maps/world.txt");
-		loadItemAssets();
-		placeItems();
-		myTileSize = myGameManager.myTileSize;
+		loadTileImages("/data/tileData.txt");
+		loadMap("/maps/maptest2.txt");
+		myTileSize = aTileSize;
 		myScreenCenter = new Vec2Int(myGameManager.myScreenCenter);
 		myScreenHalfSize = new Vec2Int(myGameManager.myScreenWidth / 2, myGameManager.myScreenHeight / 2);
 	}
 	
-	void loadTileImages()
+	void loadTileImages(String aFilePath)
 	{
-		try 
+		try
 		{
-			myLoadedTiles[0] = ImageIO.read(getClass().getResourceAsStream("/tiles/grass.png"));
+			InputStream inputStream = getClass().getResourceAsStream(aFilePath);
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
 			
-			myLoadedTiles[1] = ImageIO.read(getClass().getResourceAsStream("/tiles/wall.png"));
+			BufferedImage image;
 			
-			myLoadedTiles[2] = ImageIO.read(getClass().getResourceAsStream("/tiles/water.png"));
+			String line;
+			boolean colliderTile;
+			int index;
 			
-		} catch(IOException e)
+			while ((line = bufferedReader.readLine()) != null)
+			{
+				image = ImageIO.read(getClass().getResourceAsStream("/tiles/" + line));
+				line = bufferedReader.readLine();
+				colliderTile = Boolean.parseBoolean(line);
+				index = myLoadedTiles.size();
+				Tile tile = new Tile(image, colliderTile, index);
+				myLoadedTiles.add(tile);			
+			}
+		} catch (Exception e)
 		{
-			e.printStackTrace();
-		}
-	}
-	
-	void loadItemAssets()
-	{
-		try 
-		{
-			myLoadedItems[0] = ImageIO.read(getClass().getResourceAsStream("/items/Door.png"));
-			myItems[0] = new Item("Door", EItem.door);
-			myItems[0].myHaveCollider = true;
-
-			myLoadedItems[1] = ImageIO.read(getClass().getResourceAsStream("/items/Key.png"));
-			myItems[1] = new Item("Key", EItem.key);
-			myLoadedItems[2] = ImageIO.read(getClass().getResourceAsStream("/items/Axe.png"));
-			myItems[2] = new Item("Axe", EItem.axe);
-		} catch(IOException e)
-		{
-			e.printStackTrace();
+			e.getStackTrace();
 		}
 	}
 	
@@ -92,23 +81,19 @@ public class AssetManager
 			int xSize = Integer.parseInt(size[0]);
 			int ySize = Integer.parseInt(size[1]);
 			
-			myMap.myTitle = title;
-			myMap.mySize = new Vec2Int(xSize, ySize);
-			myMap.myMap = new Tile[xSize][ySize];
+			myMap.setMap(xSize, ySize, title);
 			
 			line = bufferedReader.readLine();
 			int y = 0;
 			while (y < ySize)
 			{
-				String numbers[] = line.split("\t");
+				String numbers[] = line.split(" ");
 				
 				for (int x = 0; x < xSize; x++)
 				{
 					int value = Integer.parseInt(numbers[x]);
-					myMap.myMap[x][y] = new Tile();
-					myMap.myMap[x][y].myImage = ETile.fromID(value);
-					myMap.myMap[x][y].myPosition = new Vec2Int(x, y);
-					myMap.myMap[x][y].myHaveCollider = value % 2 == 0 ? false : true;
+					myMap.setTile(x, y, myLoadedTiles.get(value));
+					myMap.getTile(x, y).setGridPosition(x, y, myTileSize);
 				}
 				y++;
 				line = bufferedReader.readLine();
@@ -118,99 +103,91 @@ public class AssetManager
 			e.getStackTrace();
 		}
 	}
-	
-	public void placeItems()
+		
+	public CollisionResults checkCollision(EEntityDirection aDirection, Vec2Int aPosition, Vec2Int aColliderSize, int aSpeed)
 	{
-		myMap.placeItem(10, 10, myItems[1]);
-	}
-	
-	public boolean checkCollision(Vec2Int aPosition)
-	{
-		int x = aPosition.X / myTileSize;
-		int y = aPosition.Y / myTileSize;
-		
-		if (myMap.myMap[x][y].myHaveCollider)
+		EEntityDirection direction = EEntityDirection.Idle;
+		IInteractable interactable = null;
+		int gridX = aPosition.X / myTileSize;
+		int gridY = aPosition.Y / myTileSize;
+		switch (aDirection)
 		{
-			return true;
+		case Up:
+			int yUp = aPosition.Y - aSpeed;
+			gridY = yUp / myTileSize;
+			if (yUp >= 0 && !myMap.getTile(gridX, gridY).haveCollider()) 
+			{
+				direction = EEntityDirection.Up;
+			}
+			break;
+		case Down:
+			int yDown = aPosition.Y + aSpeed;
+			int yMax = myMap.getSize().Y * myTileSize;
+			gridY = yDown / myTileSize;
+			if (yDown < yMax && !myMap.getTile(gridX, gridY).haveCollider()) 
+			{
+				direction = EEntityDirection.Down;		
+			}
+			break;
+		case Left:
+			int xLeft = aPosition.X - aSpeed;
+			gridX = xLeft / myTileSize;
+			if (xLeft >= 0 && !myMap.getTile(gridX, gridY).haveCollider()) 
+			{
+				direction = EEntityDirection.Left;
+			}
+			break;
+		case Right:
+			int xRight = aPosition.X + aSpeed;
+			int xMax = myMap.getSize().X * myTileSize;
+			gridX = xRight / myTileSize;
+			if (xRight < xMax && !myMap.getTile(gridX, gridY).haveCollider()) 
+			{
+				direction = EEntityDirection.Right;
+			}
+			break;
+		default:
+			break;		
 		}
-		return false;
-	}
-	
-	public boolean checkCollision(Vec2Int aPosition, Vec2Int aSize)
-	{
-		int xWest = (aPosition.X - aSize.X);
-		int yNorth = (aPosition.Y - aSize.Y);
-		int xEast = (aPosition.X + aSize.X);
-		int ySouth = (aPosition.Y + aSize.Y);
 		
-		if (checkCollision(xWest, yNorth) || checkCollision(xEast, yNorth) || checkCollision(xWest, ySouth) || checkCollision(xEast, ySouth))
+		if (myMap.getTile(gridX, gridY).haveInteractable())
 		{
-			return true;
+			direction = EEntityDirection.Idle;
+			interactable = myMap.getTile(gridX, gridY).getInteractable();
 		}
 		
-		return false;
-	}
-	
-	public boolean checkCollision(int anX, int aY, Vec2Int aSize)
-	{
-		int xWest = (anX - aSize.X);
-		int yNorth = (aY - aSize.Y);
-		int xEast = (anX + aSize.X);
-		int ySouth = (aY + aSize.Y);
-		
-		if (checkCollision(xWest, yNorth) || checkCollision(xEast, yNorth) || checkCollision(xWest, ySouth) || checkCollision(xEast, ySouth))
-		{
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public boolean checkCollision(int anX, int aY)
-	{
-		int x = anX / myTileSize;
-		int y = aY / myTileSize;
-		
-		if (x >= myMap.mySize.X || x < 0 || y >= myMap.mySize.Y || y < 0)
-		{
-			return true;
-		}
-		else if (myMap.myMap[x][y].myHaveCollider || myMap.myMap[x][y].myHaveItem)
-		{
-			
-			return true;
-		}
-		return false;
+		return new CollisionResults(direction, interactable);		
 	}
 	
 	public void draw(Graphics2D g2)
 	{
-		int screenBuffer = 2;
-		int playerPositionX = myGameManager.myPlayer.myPosition.X;
-		int playerPositionY = myGameManager.myPlayer.myPosition.Y;
-		int worldPosX = 0;
-		int worldPosY = 0;
-		int northBound = ((playerPositionY - myScreenCenter.Y) / myTileSize) - screenBuffer;
-		int southBound = ((playerPositionY + myScreenCenter.Y) / myTileSize) + screenBuffer;
-		int westBound = ((playerPositionX - myScreenCenter.X) / myTileSize) - screenBuffer;
-		int eastBound = ((playerPositionX + myScreenCenter.X) / myTileSize) + screenBuffer;
+		Vec2Int playerPosition = myGameManager.getPlayerPosition();
+		int northBound = playerPosition.Y - myScreenCenter.Y - myTileSize;
+		int southBound = playerPosition.Y + myScreenCenter.Y + myTileSize;
+		int westBound = playerPosition.X - myScreenCenter.X - myTileSize;
+		int eastBound = playerPosition.X + myScreenCenter.X + myTileSize;
+		int yMax = myMap.getSize().Y * myTileSize;
+		int xMax = myMap.getSize().X * myTileSize;
+		int y = 0;
+		int x = 0;
 		
-		for (int y = 0; y < myMap.mySize.Y; y++)
+		for (int yPos = 0; yPos < yMax; yPos += myTileSize)
 		{
-			for (int x = 0; x < myMap.mySize.X; x++)
+			x = 0;
+			for (int xPos = 0; xPos < xMax; xPos += myTileSize)
 			{
-				worldPosY = y * myTileSize + myScreenCenter.Y;
-				if (x > westBound && x < eastBound && y > northBound && y < southBound )
+				if (xPos > westBound && xPos < eastBound && yPos > northBound && yPos < southBound )
 				{
-					worldPosX = x * myTileSize + myScreenCenter.X;
-					g2.drawImage(myLoadedTiles[myMap.myMap[x][y].myImage.myID], worldPosX - playerPositionX, worldPosY - playerPositionY, myTileSize, myTileSize, null);
-					if (myMap.myMap[x][y].myHaveItem)
-					{
-						g2.drawImage(myLoadedItems[myMap.myMap[x][y].myItem.myImage.myID], worldPosX - playerPositionX, worldPosY - playerPositionY, myTileSize, myTileSize, null);
-						//System.out
-					}
+					g2.drawImage(myMap.getTile(x, y).getImage(), xPos + myScreenCenter.X - playerPosition.X, yPos + myScreenCenter.Y - playerPosition.Y, myTileSize, myTileSize, null);
+//					
+//					if (myMap.getTile(x, y).haveInteractable())
+//					{
+//						g2.drawImage(myMap.getTile(x, y).getInteractable().getImageIndex(), xPos + myScreenCenter.X - playerPosition.X, yPos + myScreenCenter.Y - playerPosition.Y, myTileSize, myTileSize, null);
+//					}
 				}
+				x++;
 			}
+			y++;
 		}
 	}
 }

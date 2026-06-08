@@ -1,41 +1,89 @@
 package tile;
 
-import item.Item;
+import java.awt.image.BufferedImage;
+
+import interactable.IInteractable;
 import utilities.Vec2Int;
 
 public class Tile 
 {
-	public ETile myImage;
-	public Vec2Int myPosition;
-	public boolean myHaveCollider = false;	
-	public boolean myHaveItem = false;
-	public Item myItem;
+	BufferedImage myImage;
+	boolean myHaveCollider = false;
+	int myIndex;
+	
+	Vec2Int myGridPosition;
+	Vec2Int myWorldPosition;
+	
+	boolean myHaveInteractable = false;
+	IInteractable myInteractable;
 	
 	public Tile()
 	{
-		myImage = ETile.none;
-		myPosition = new Vec2Int();
-		myItem = new Item();
+		myImage = null;
+		myIndex = 999;
+		myGridPosition = new Vec2Int();
+		myWorldPosition = new Vec2Int();
+		myInteractable = null;
+	}
+	
+	public Tile(BufferedImage anImage, Boolean aHaveCollider, int anIndex)
+	{
+		myImage = anImage;
+		myHaveCollider = aHaveCollider;
+		myIndex = anIndex;
+		myGridPosition = new Vec2Int();
+		myWorldPosition = new Vec2Int();
+		myInteractable = null;
 	}
 	
 	public Tile(Tile aCopy)
 	{
 		myImage = aCopy.myImage;
-		myPosition = aCopy.myPosition;
 		myHaveCollider = aCopy.myHaveCollider;
-		myHaveItem = aCopy.myHaveItem;
-		myItem = aCopy.myItem;
+		myIndex = aCopy.myIndex;
+		myGridPosition = aCopy.myGridPosition;
+		myWorldPosition = aCopy.myWorldPosition;
+		myHaveInteractable = aCopy.myHaveInteractable;
+		myInteractable = aCopy.myInteractable;
 	}
 	
-	public void addItem(Item anItem)
+	public BufferedImage getImage()
 	{
-		myItem = anItem;
-		myHaveItem = true;
+		return myImage;
 	}
 	
-	public void removeItem()
+	public void setGridPosition(int anX, int aY, int aTileSize)
 	{
-		myItem = null;
-		myHaveItem = false;
+		myGridPosition.X = anX;
+		myGridPosition.Y = aY;
+		myWorldPosition.X = anX * aTileSize;
+		myWorldPosition.Y = aY * aTileSize;
+	}
+	
+	public boolean haveCollider()
+	{
+		return myHaveCollider;
+	}
+	
+	public boolean haveInteractable()
+	{
+		return myHaveInteractable;
+	}
+	
+	public void addInteractable(IInteractable anInteractable)
+	{
+		myInteractable = anInteractable;
+		myHaveInteractable = true;
+	}
+	
+	public IInteractable getInteractable()
+	{
+		return myInteractable;
+	}
+	
+	public void removeInteractable()
+	{
+		myInteractable = null;
+		myHaveInteractable = false;
 	}
 }

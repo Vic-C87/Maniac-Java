@@ -1,13 +1,13 @@
 package tile;
 
-import item.Item;
+import interactable.IInteractable;
 import utilities.Vec2Int;
 
 public class Map 
 {
-	public String myTitle;
-	public Vec2Int mySize;
-	public Tile[][] myMap;
+	String myTitle;
+	Vec2Int mySize;
+	Tile[][] myMap;
 	
 	public Map()
 	{
@@ -57,8 +57,30 @@ public class Map
 		myMap = aCopy.myMap;
 	}
 	
-	public void placeItem(int anXTile, int aYTile, Item anItem)
+	public void setMap(int anXSize, int aYSize, String aTitle)
 	{
-		myMap[anXTile][aYTile].addItem(anItem);
+		myTitle = aTitle;
+		myMap = new Tile[anXSize][aYSize];
+		mySize = new Vec2Int(anXSize, aYSize);
+	}
+	
+	public void setTile(int anX, int aY, Tile aTile)
+	{
+		myMap[anX][aY] = aTile;
+	}
+	
+	public Tile getTile(int anX, int aY)
+	{
+		return myMap[anX][aY];
+	}
+	
+	public Vec2Int getSize()
+	{
+		return mySize;
+	}
+	
+	public void placeItem(int anXTile, int aYTile, IInteractable anInteractable)
+	{
+		myMap[anXTile][aYTile].addInteractable(anInteractable);
 	}
 }
