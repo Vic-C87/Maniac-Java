@@ -7,14 +7,14 @@ import utilities.Vec2Int;
 
 public class Door implements IInteractable
 {
-	int myTileSize;
-	EInteractable myType;
-	int myImageIndex;
-	Vec2Int myGridPosition;
-	Vec2Int myTargetPosition;
-	String myTargetMap;
+	private int myTileSize;
+	private EInteractable myType;
+	private int myImageIndex;
+	private Vec2Int myGridPosition;
+	private Vec2Int myTargetPosition;
+	private String myTargetMap;
 	
-	boolean myIsLocked = false;
+	private boolean myIsLocked = false;
 	
 	public Door(EInteractable aType, int anImageIndex,Vec2Int aGridPosition, Vec2Int aTargetPosition, String aTargetMap, int aTileSize)
 	{
@@ -32,6 +32,7 @@ public class Door implements IInteractable
 		// check if this map is target map
 		// otherwise get target map
 		// set player position to myTargetPosition
+		aPlayer.teleport(myTargetPosition);
 		Debug.msg(myTargetPosition, "Door used, leading to: ");
 		
 	}

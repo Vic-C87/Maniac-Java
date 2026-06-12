@@ -8,33 +8,34 @@ import java.awt.Graphics2D;
 import javax.swing.JPanel;
 
 import entity.Player;
-import utilities.Debug;
+import tile.Map;
 import utilities.Vec2Int;
 
 public class GameManager extends JPanel implements Runnable 
 {
 	private static final long serialVersionUID = -3171413117350253492L;
 	
-	final int myTileSize;
-	final int myMaxScreenCol = 16;
-	final int myMaxScreenRow = 9;
-	final int myScreenWidth;
-	final int myScreenHeight;
-	final int myFPS = 60;
-	final Vec2Int myScreenCenter;
+	private final int myTileSize;
+	private final int myMaxScreenCol = 16;
+	private final int myMaxScreenRow = 9;
+	private final int myScreenWidth;
+	private final int myScreenHeight;
+	private final int myFPS = 60;
+	private final Vec2Int myScreenCenter;
 	
-	InputManager myInputManager;
-	Thread myGameThread;
+	private InputManager myInputManager;
+	private Thread myGameThread;
 
-	AssetManager myAssetManager;
-	Player myPlayer;
+	private Map myMap;
+	private AssetManager myAssetManager;
+	private CollisionManager myCollisionManager;
+	private Player myPlayer;
 	
 	public GameManager(int aWidth, int aHeight) 
 	{
 		myScreenWidth = aWidth;
 		myScreenHeight = aHeight;
 		myTileSize = aWidth / myMaxScreenCol;
-		Debug.msg(aWidth + " X " + aHeight);
 		myInputManager = new InputManager(this);
 		this.setPreferredSize(new Dimension(myScreenWidth, myScreenHeight));
 		this.setBackground(Color.black);
@@ -43,8 +44,11 @@ public class GameManager extends JPanel implements Runnable
 		this.addMouseListener(myInputManager);
 		this.setFocusable(true);
 		myScreenCenter = new Vec2Int(myScreenWidth/2 - myTileSize/2, myScreenHeight/2 - myTileSize/2);
-		myAssetManager = new AssetManager(this, myTileSize);
-		myPlayer = new Player(myInputManager, myAssetManager, myScreenCenter, myTileSize);
+		myMap = new Map(myTileSize);
+		myCollisionManager = new CollisionManager(myMap, myTileSize);
+		myPlayer = new Player(myCollisionManager, myInputManager, myScreenCenter, myTileSize);
+		myAssetManager = new AssetManager(myPlayer, myMap, myScreenCenter,myTileSize);
+		myCollisionManager.setup();
 	}
 	
 	public void startGameThread() 
@@ -99,10 +103,4 @@ public class GameManager extends JPanel implements Runnable
 		
 		g2.dispose();	
 	}
-	
-	public Vec2Int getPlayerPosition()
-	{
-		return myPlayer.getPosition();
-	}
-
 }

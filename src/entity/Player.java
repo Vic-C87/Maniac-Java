@@ -7,40 +7,40 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 
 import main.InputManager;
-import main.AssetManager;
-import interactable.CollisionResults;
+import main.CollisionManager;
+import interactable.Collider;
+import interactable.CollisionResult;
+import interactable.Door;
+import interactable.EInteractable;
 import utilities.Vec2Int;
 
 public class Player extends Entity 
 {
-	int myTileSize;
-	Vec2Int myScreenCenter;
-	InputManager myInputManager;
-	AssetManager myAssetManager;
-	
-	int myHalfTileSize;
-	
-	public Player(InputManager anInputManager, AssetManager anAssetManager, Vec2Int aScreenCenter, int aTileSize)
+	private Vec2Int myScreenCenter;
+	private InputManager myInputManager;
+		
+	public Player(CollisionManager aCollisionManager, InputManager anInputManager, Vec2Int aScreenCenter, int aTileSize)
 	{
+		super(aCollisionManager);
 		myInputManager = anInputManager;
-		myAssetManager = anAssetManager;
 		myScreenCenter = aScreenCenter;
 		myTileSize = aTileSize;
 		setDefaultValues();
 		loadPlayerImage();
 	}
 	
-	public void setDefaultValues()
+	private void setDefaultValues()
 	{
 		myPosition = new Vec2Int(myScreenCenter);
+		myPosition.X += myTileSize / 2;
+		myPosition.Y += myTileSize / 2;
+		myGridPosition = new Vec2Int();
 		mySpeed = 4;
 		myDirection = EEntityDirection.Idle;
-		myHalfTileSize = myTileSize/2;
-		myColliderPosition = new Vec2Int(myHalfTileSize, myHalfTileSize);
-		myColliderSize = new Vec2Int(myHalfTileSize/2, myHalfTileSize/2);
+		myCollider = new Collider(this, myTileSize / 2);
 	}
 	
-	public void loadPlayerImage()
+	private void loadPlayerImage()
 	{
 		try
 		{
@@ -62,23 +62,32 @@ public class Player extends Entity
 	
 	public void update()
 	{
-		myColliderPosition.add(myPosition);
-		
-		CollisionResults results = myAssetManager.checkCollision(myInputManager.getDirection(), myColliderPosition, myColliderSize, mySpeed);
-		
-		move(results.aDirection());
+		CollisionResult results = myCollisionManager.checkCollision(myInputManager.getDirection(), mySpeed, myCollider);
+
+		move(results.aDirection());			
+		if (results.anInteractable() != null)
+		{
+			EInteractable type = results.anInteractable().getType();
+			
+			switch (type)
+			{
+			case Door:
+				Door door = (Door)results.anInteractable();
+				door.use(this);
+				break;
+			default:
+				break;
+			}
+		}
 		
 		if (mySpriteCounter > 10 )
 		{
 			mySpriteSwitch = !mySpriteSwitch;
 			mySpriteCounter = 0;
 		}
-		
-		myColliderPosition.X = myHalfTileSize;
-		myColliderPosition.Y = myHalfTileSize;
 	}
 	
-	void move(EEntityDirection aDirection)
+	private void move(EEntityDirection aDirection)
 	{
 		myDirection = aDirection;
 		
@@ -111,6 +120,12 @@ public class Player extends Entity
 		}
 	}
 	
+	public void teleport(Vec2Int aTargetPosition)
+	{
+		myPosition.X = aTargetPosition.X * myTileSize;
+		myPosition.Y = aTargetPosition.Y * myTileSize;
+	}
+	
 	public void draw(Graphics2D g2)
 	{
 		BufferedImage image = null;
@@ -134,6 +149,9 @@ public class Player extends Entity
 			break;
 		}
 			
-		g2.drawImage(image, myScreenCenter.X, myScreenCenter.Y, myTileSize, myTileSize, null);		
+		g2.drawImage(image, myScreenCenter.X, myScreenCenter.Y, myTileSize, myTileSize, null);
+		g2.drawRect(myScreenCenter.X, myScreenCenter.Y, myTileSize, myTileSize);
+		g2.drawRect(myScreenCenter.X + myTileSize/4, myScreenCenter.Y + myTileSize/4, myCollider.getSize().X * 2, myCollider.getSize().Y * 2);
+
 	}
 }

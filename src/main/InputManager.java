@@ -10,9 +10,9 @@ import utilities.Vec2Int;
 
 public class InputManager implements KeyListener, MouseListener
 {
-	EEntityDirection myDirection;
-	Vec2Int myMousePosition = new Vec2Int();
-	GameManager myGameManager;
+	private EEntityDirection myDirection;
+	private Vec2Int myMousePosition = new Vec2Int();
+	private GameManager myGameManager;
 	
 	public InputManager(GameManager aGameManager)
 	{

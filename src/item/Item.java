@@ -4,10 +4,10 @@ import utilities.Vec2Int;
 
 public class Item 
 {
-	String myName;
-	EItem myImage;
-	Vec2Int myPosition;
-	boolean myHaveCollider = false;
+	private String myName;
+	private EItem myImage;
+	private Vec2Int myPosition;
+	private boolean myHaveCollider = false;
 	
 	public Item()
 	{
